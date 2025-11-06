@@ -7,6 +7,7 @@ module.exports = {
     "./components/**/*.{js,jsx,ts,tsx}"
     
   ],
+  //mohsin abbas
   // <-- this line is required for NativeWind to work
   presets: [require("nativewind/preset")],
   theme: {
