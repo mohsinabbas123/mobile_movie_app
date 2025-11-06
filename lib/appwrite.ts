@@ -1,128 +1,154 @@
-import * as Linking from 'expo-linking';
-import * as WebBrowser from 'expo-web-browser';
-
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Account, Avatars, Client, OAuthProvider } from "react-native-appwrite";
 
+WebBrowser.maybeCompleteAuthSession();
+
 export const config = {
-    Platform: 'com.jsm.restate',
+    Platform: "com.jsm.restate",
     endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT,
     projectID: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
-}
+};
 
-export const client = new Client();
-
-client
+// --------------------
+// Initialize client
+// --------------------
+export const client = new Client()
     .setEndpoint(config.endpoint!)
     .setProject(config.projectID!)
-    .setPlatform(config.Platform!)
+    .setPlatform(config.Platform!);
 
-export const avatar = new Avatars(client);  // Fixed typo: avater -> avatar
 export const account = new Account(client);
+export const avatar = new Avatars(client);
 
+// --------------------
+// Save & restore session
+// --------------------
+const SESSION_KEY = "appwrite_session";
+
+async function saveSession(session: any) {
+    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+async function loadSession() {
+    const saved = await AsyncStorage.getItem(SESSION_KEY);
+    if (!saved) return null;
+    try {
+        return JSON.parse(saved);
+    } catch {
+        return null;
+    }
+}
+
+async function clearSession() {
+    await AsyncStorage.removeItem(SESSION_KEY);
+}
+
+// --------------------
+// Login with Google
+// --------------------
 export async function login() {
     try {
-        // Create a deep link for YOUR app, not Appwrite's URL
-        const redirectUri = Linking.createURL( '/');  // This creates: exp://yourapp/ or yourapp://
-        
-        console.log('Redirect URI:', redirectUri);  // Debug log
+        const redirectUri = Linking.createURL("/");
+        console.log("Redirect URI:", redirectUri);
 
-    
-        // hasssan code     const { url: authUrl } =  await account.createOAuth2Token(
-  const response = await account.createOAuth2Token(
-    OAuthProvider.Google,
-    redirectUri,
-    // redirectUri
-);
+        // Get OAuth2 URL from Appwrite
+        const response = await account.createOAuth2Token(
+            OAuthProvider.Google,
+            redirectUri,
+            redirectUri
+        );
 
-console.log('Auth URL:', response);  // optional line edited
+        if (!response) throw new Error("Failed to get OAuth2 token URL");
 
-// // const browserResult = await WebBrowser.openAuthSessionAsync(
-// //     authUrl,
-// //     redirectUri
-// );
+        // Open browser for Google login
+        const browserResult = await WebBrowser.openAuthSessionAsync(
+            response.toString(),
+            redirectUri
+        );
 
+        if (browserResult.type !== "success") {
+            throw new Error("Login cancelled or failed");
+        }
 
-if(!response) throw new Error('Failed to login');
+        // Extract secret and userId from redirect URL
+        const url = new URL(browserResult.url);
+        const secret = url.searchParams.get("secret")?.toString();
+        const userId = url.searchParams.get("userId")?.toString();
 
-const browserResult = await WebBrowser.openAuthSessionAsync(
-    response.toString(),
-    redirectUri
-)
+        if (!secret || !userId) throw new Error("Failed to extract session params");
 
-if(browserResult.type  !== 'success') throw new Error('Failed to login ')
+        // Create session in Appwrite
+        // try {
+        //     await account.deleteSession("current");
+        // } catch { }
+        const session = await account.createSession(userId, secret);
+        if (!session) throw new Error("Failed to create session");
 
-    const url = new URL(browserResult.url);
-        
-    const secret = url.searchParams.get('secret')?.toString();
-    const userId = url.searchParams.get('userId')?.toString();
+        // Save session locally
+        await saveSession(session);
+        console.log("Session saved:", session);
 
-    if(!secret || !userId) throw new Error('Failed to login');
-
-    // const session = await account.createSession(userId, secret);     // GPT
-
-    // if(!session) throw new Error('Failed to create a seesion');     // GPT
-
-    return true;
-
-
-        // if (browserResult.type !== 'success') {
-        //     throw new Error('Failed to login: Browser session not successful');
-        // }
-        
-        // const url = new URL(browserResult.url);
-        // const secret = url.searchParams.get('secret');
-        // const userId = url.searchParams.get('userId');
-        
-        // if (!secret || !userId) {
-        //     throw new Error('Failed to login: Missing secret or userId');
-        // }
-        
-        // console.log('Creating session...');  // Debug log
-        
-        // // Create session with the tokens
-        // const session = await account.createSession(userId, secret);
-        // console.log('Auth URL:', authUrl);
-        // const sentRedirect = decodeURIComponent(new URL(authUrl).searchParams.get('redirect_uri') || '');
-        // console.log('redirect_uri sent to Google:', sentRedirect);
-        // if (!session) {
-        //     throw new Error('Failed to create a session');
-        // }
-        
-        // return true;
-        
-    } catch (error) {
-        console.error('Login error:', error);
-        return false;
-    }
-}
-
-export async function logout() {
-    try {
-        await account.deleteSession({ sessionId: 'current' });
         return true;
     } catch (error) {
-        console.error('Logout error:', error);
+        console.error("Login error:", error);
         return false;
     }
 }
 
+// --------------------
+// Logout
+// --------------------
+export async function logout() {
+    try {
+        await account.deleteSession("current");
+        await clearSession();
+        console.log("Logged out and session cleared");
+        return true;
+    } catch (error) {
+        console.error("Logout error:", error);
+        return false;
+    }
+}
+
+// --------------------
+// Get current user
+// --------------------
 export async function getCurrentUser() {
     try {
+        // Try direct fetch first
         const response = await account.get();
-        
-        if (response.$id) {
-            const userAvatar = avatar.getInitials({ name: response.name });        // updated      (response.name);
-            
+        if (response?.$id) {
+            const userAvatar = avatar.getInitials({ name: response.name });
             return {
                 ...response,
                 avatar: userAvatar.toString(),
+            };
+        }
+    } catch (error) {
+        console.log("No active session, trying restore...");
+
+        // Try restoring saved session if available
+        const saved = await loadSession();
+        if (saved?.userId && saved?.secret) {
+            try {
+                const restored = await account.createSession(saved.userId, saved.secret);
+                console.log("Session restored:", restored);
+
+                const response = await account.get();
+                const userAvatar = avatar.getInitials({ name: response.name });
+
+                return {
+                    ...response,
+                    avatar: userAvatar.toString(),
+                };
+            } catch (e) {
+                console.error("Failed to restore session:", e);
             }
         }
-        
-        // return null;
-        
-    } catch (error) {
-        console.error('Get user error:', error);
+
+        console.error("Get user error:", error);
         return null;
     }
 }
