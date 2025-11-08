@@ -1,6 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Account, Avatars, Client, OAuthProvider } from "react-native-appwrite";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -80,9 +80,9 @@ export async function login() {
         if (!secret || !userId) throw new Error("Failed to extract session params");
 
         // Create session in Appwrite
-        // try {
-        //     await account.deleteSession("current");
-        // } catch { }
+        try {
+            await account.deleteSession("current");
+        } catch { }                                                                    // from try{} to catch{} line 3 lines create a session in appwrite for new user
         const session = await account.createSession(userId, secret);
         if (!session) throw new Error("Failed to create session");
 
@@ -152,3 +152,4 @@ export async function getCurrentUser() {
         return null;
     }
 }
+ 

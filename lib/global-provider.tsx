@@ -10,7 +10,7 @@ interface User{
 }
 
 interface GlobalContextType{
-    isloggedIn: boolean;
+    isLoggedIn: boolean;
     user: User | null;
     loading: boolean;
     refetch: (newParams?: Record<string, string | number>) => Promise<void>;
@@ -31,7 +31,7 @@ export const GlobalProvider = ({children}: {children:ReactNode}) =>{
 
 const isLoggedIn = !!user;
 
-console.log(JSON.stringify(user, null, 2));   // console.log(JSON.stringify(user, replacer:null, space:2));  this is old code 
+// console.log(JSON.stringify(user, null, 2));   // console.log(JSON.stringify(user, replacer:null, space:2));  this is old code 
     
  return (
   <GlobalContext.Provider value={{
