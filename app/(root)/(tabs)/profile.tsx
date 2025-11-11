@@ -4,6 +4,10 @@ import React from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const SettingsItem = () => (
+  
+)
+
 const profile = () => {
   const handleLogout = async () => {};
 
@@ -32,6 +36,11 @@ const profile = () => {
       </TouchableOpacity>
       <Text className='text-2xl font-rubik-bold mt-2'>Mohsin | Abbas</Text>
       
+    </View>
+
+
+    <View className='flex flex-row mt-10'>
+
     </View>
 
 
