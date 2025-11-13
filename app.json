@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon_fixed.png",
-    "scheme": "restate",                                   // "appwrite-callback-68f36b0a0022ecce9366",   i chnaged on 6 nov
+    "scheme": "restate", // "appwrite-callback-68f36b0a0022ecce9366",   i chnaged on 6 nov
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
