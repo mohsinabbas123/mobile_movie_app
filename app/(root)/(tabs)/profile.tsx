@@ -77,7 +77,7 @@ const Profile = () => {
   const showAvatar = avatarUrl && avatarUrl.startsWith('http');
 
   return (
-    <SafeAreaView className="h-full bg-white">
+    <SafeAreaView className="h-full bg-white ">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-32 px-7"
