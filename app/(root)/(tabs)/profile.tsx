@@ -47,7 +47,7 @@ const SettingsItem = ({
 );
 
 // --- GET INITIALS HELPER FUNCTION ---
-const getInitials = (name?: string) => {
+export const getInitials = (name?: string) => {
   if (!name) return '';
 
   const parts = name.trim().split(' ').filter(Boolean);
