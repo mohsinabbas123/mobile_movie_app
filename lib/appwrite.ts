@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
-import { Account, Avatars, Client, OAuthProvider } from "react-native-appwrite";
+import { Account, Avatars, Client, Databases, OAuthProvider } from "react-native-appwrite";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -9,6 +9,11 @@ export const config = {
   Platform: "com.jsm.restate",
   endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT,
   projectID: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
+  databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID,
+  agentsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_AGENTS_COLLECTION_ID,
+  galleriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_GALLERIES_COLLECTION_ID,
+  reviewsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_REVIEWS_COLLECTION_ID,
+  propertiesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_PROPERTIES_COLLECTION_ID
 };
 
 // --------------------
@@ -21,6 +26,7 @@ export const client = new Client()
 
 export const account = new Account(client);
 export const avatar = new Avatars(client);
+export const databases = new Databases(client);  
 
 // --------------------
 // Save & restore session
